@@ -18,6 +18,9 @@ dependencies {
     implementation("org.apache.tomcat.embed:tomcat-embed-core:8.5.42")
     implementation("org.apache.tomcat.embed:tomcat-embed-jasper:8.5.42")
 
+    // 리플렉션 의존성 주입
+    implementation("org.reflections:reflections:0.10.2")
+
     // 로그백
     implementation("ch.qos.logback:logback-classic:1.4.7")
 
