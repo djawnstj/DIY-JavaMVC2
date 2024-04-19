@@ -1,7 +1,5 @@
 package com.djawnstj.mvcframework.beans;
 
-import com.djawnstj.mvcframework.context.annotation.Component;
-import com.djawnstj.mvcframework.web.servlet.HandlerMapping;
 import org.reflections.Reflections;
 
 import java.lang.annotation.Annotation;

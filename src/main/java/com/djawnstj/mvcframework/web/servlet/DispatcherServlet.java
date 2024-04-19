@@ -4,6 +4,7 @@ import com.djawnstj.mvcframework.use.SignUpController;
 import com.djawnstj.mvcframework.use.UsersController;
 import com.djawnstj.mvcframework.web.servlet.handler.BeanNameUrlHandlerMapping;
 import com.djawnstj.mvcframework.web.servlet.mvc.Controller;
+import com.djawnstj.mvcframework.web.servlet.view.JspViewResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,8 @@ public class DispatcherServlet extends HttpServlet {
             )
     );
 
+    private final HandlerAdapter handlerAdapter = new SimpleControllerHandlerAdapter();
+
     @Override
     public void init(final ServletConfig config) throws ServletException {
         log.info("DispatcherServlet init called.");
@@ -43,13 +46,32 @@ public class DispatcherServlet extends HttpServlet {
     private void doDispatch(final HttpServletRequest req, final HttpServletResponse resp) {
         try {
             final Object handler = handlerMapping.getHandler(req);
-            final String viewName = ((Controller) handler).handleRequest(req, resp);
 
-            final RequestDispatcher requestDispatcher = req.getRequestDispatcher(viewName);
-            requestDispatcher.forward(req, resp);
+            final boolean supports = handlerAdapter.supports(handler);
+
+            if (supports) {
+                final ModelAndView mv = handlerAdapter.handle(req, resp, handler);
+                render(mv, req, resp);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void render(final ModelAndView mv, final HttpServletRequest req, final HttpServletResponse resp) throws Exception {
+        final String viewName = mv.getViewName();
+
+        final View view = resolveViewName(viewName);
+
+        view.render(mv.getModelInternal(), req, resp);
+    }
+
+    private View resolveViewName(final String viewName) {
+        final ViewResolver viewResolver = new JspViewResolver();
+
+        final View view = viewResolver.resolveViewName(viewName);
+
+        return view;
     }
 
 }

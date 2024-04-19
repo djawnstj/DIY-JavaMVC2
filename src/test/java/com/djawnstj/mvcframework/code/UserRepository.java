@@ -1,6 +1,6 @@
 package com.djawnstj.mvcframework.code;
 
-import com.djawnstj.mvcframework.context.annotation.Repository;
+import com.djawnstj.mvcframework.context.annotation.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;

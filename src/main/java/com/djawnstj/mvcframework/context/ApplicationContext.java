@@ -2,9 +2,9 @@ package com.djawnstj.mvcframework.context;
 
 import com.djawnstj.mvcframework.beans.BeanScanner;
 import com.djawnstj.mvcframework.beans.factory.BeanFactory;
-import com.djawnstj.mvcframework.context.annotation.Autowired;
+import com.djawnstj.mvcframework.context.annotation.factory.Autowired;
 import com.djawnstj.mvcframework.context.annotation.Bean;
-import com.djawnstj.mvcframework.context.annotation.Component;
+import com.djawnstj.mvcframework.context.annotation.stereotype.Component;
 import com.djawnstj.mvcframework.context.annotation.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

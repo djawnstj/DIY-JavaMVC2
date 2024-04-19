@@ -1,7 +1,7 @@
 package com.djawnstj.mvcframework.code;
 
-import com.djawnstj.mvcframework.context.annotation.Autowired;
-import com.djawnstj.mvcframework.context.annotation.Service;
+import com.djawnstj.mvcframework.context.annotation.factory.Autowired;
+import com.djawnstj.mvcframework.context.annotation.stereotype.Service;
 
 import java.util.List;
 

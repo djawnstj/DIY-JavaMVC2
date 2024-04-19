@@ -1,4 +1,4 @@
-package com.djawnstj.mvcframework.context.annotation;
+package com.djawnstj.mvcframework.context.annotation.factory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

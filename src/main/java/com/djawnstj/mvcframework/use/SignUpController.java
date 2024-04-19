@@ -1,5 +1,6 @@
 package com.djawnstj.mvcframework.use;
 
+import com.djawnstj.mvcframework.web.servlet.ModelAndView;
 import com.djawnstj.mvcframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
@@ -7,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class SignUpController implements Controller {
     @Override
-    public String handleRequest(final HttpServletRequest req, final HttpServletResponse resp) throws Exception {
+    public ModelAndView handleRequest(final HttpServletRequest req, final HttpServletResponse resp) throws Exception {
 
         if (req.getMethod().equalsIgnoreCase("POST")) {
             final String id = req.getParameter("id");
@@ -16,6 +17,6 @@ public class SignUpController implements Controller {
             UserRepository.save(id, pw);
         }
 
-        return "sign-up.jsp";
+        return new ModelAndView("sign-up");
     }
 }
