@@ -3,12 +3,11 @@ package com.djawnstj.mvcframework.web.servlet;
 import com.djawnstj.mvcframework.use.SignUpController;
 import com.djawnstj.mvcframework.use.UsersController;
 import com.djawnstj.mvcframework.web.servlet.handler.BeanNameUrlHandlerMapping;
-import com.djawnstj.mvcframework.web.servlet.mvc.Controller;
+import com.djawnstj.mvcframework.web.servlet.mvc.SimpleControllerHandlerAdapter;
 import com.djawnstj.mvcframework.web.servlet.view.JspViewResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

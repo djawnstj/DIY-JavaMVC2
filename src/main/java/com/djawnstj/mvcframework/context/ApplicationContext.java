@@ -2,14 +2,17 @@ package com.djawnstj.mvcframework.context;
 
 import com.djawnstj.mvcframework.beans.BeanScanner;
 import com.djawnstj.mvcframework.beans.factory.BeanFactory;
-import com.djawnstj.mvcframework.context.annotation.factory.Autowired;
 import com.djawnstj.mvcframework.context.annotation.Bean;
-import com.djawnstj.mvcframework.context.annotation.stereotype.Component;
 import com.djawnstj.mvcframework.context.annotation.Configuration;
+import com.djawnstj.mvcframework.context.annotation.factory.Autowired;
+import com.djawnstj.mvcframework.context.annotation.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class ApplicationContext implements BeanFactory {
@@ -20,6 +23,7 @@ public class ApplicationContext implements BeanFactory {
     private final Set<Class<?>> beanClasses = new HashSet<>();
     private final Map<Class<?>, Class<?>> beanMethodOwnerPair = new LinkedHashMap<>();
     private final Map<String, Object> beansMap = new LinkedHashMap<>();
+    private final Map<Class<?>, Set<String>> allBeanNamesByType = new LinkedHashMap<>();
 
     public ApplicationContext(final String componentScanPackage) {
         this.scanner = new BeanScanner(componentScanPackage);
@@ -186,6 +190,21 @@ public class ApplicationContext implements BeanFactory {
 
     private void saveBean(final String beanName, final Object bean) {
         this.beansMap.put(beanName, bean);
+        mapToSuperClasses(bean.getClass())
+                .forEach(clazz -> this.allBeanNamesByType.computeIfAbsent(clazz, beanType -> new HashSet<>())
+                        .add(beanName));
+    }
+
+    private Set<Class<?>> mapToSuperClasses(final Class<?> clazz) {
+        final HashSet<Class<?>> superClasses = new HashSet<>();
+        Class<?> superClass = clazz;
+
+        while (superClass != null) {
+            superClasses.add(superClass);
+            superClass = superClass.getSuperclass();
+        }
+
+        return superClasses;
     }
 
     private void createBeanInConfigurationAnnotatedClass(final Object configuration) {
@@ -198,7 +217,7 @@ public class ApplicationContext implements BeanFactory {
                 final Object[] parameters = createParameters(method.getParameterTypes());
                 final Object instance = method.invoke(configuration, parameters);
                 final Bean annotation = method.getAnnotation(Bean.class);
-                final String beanName = (annotation.name().isBlank()) ? method.getReturnType().getName() : annotation.name();
+                final String beanName = (annotation.name().isBlank()) ? method.getName() : annotation.name();
                 saveBean(beanName, instance);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new RuntimeException(e);
@@ -219,6 +238,17 @@ public class ApplicationContext implements BeanFactory {
 
     @Override
     public <T> T getBean(final Class<T> requiredType) {
-        return (T) this.beansMap.get(requiredType.getName());
+        final Set<String> beanNames = this.allBeanNamesByType.get(requiredType);
+
+        if (beanNames == null) {
+            throw new RuntimeException("Bean not found '" + requiredType + "'");
+        } else if (beanNames.size() != 1) {
+            throw new RuntimeException("No qualifying bean of type '" + requiredType
+                    + "' available: expected single matching bean but found " + beanNames.size() + ": " + String.join(", ", beanNames));
+        }
+
+        final String beanName = beanNames.stream().findFirst().get();
+
+        return (T) this.beansMap.get(beanName);
     }
 }

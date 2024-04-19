@@ -1,6 +1,7 @@
-package com.djawnstj.mvcframework.web.servlet;
+package com.djawnstj.mvcframework.web.servlet.mvc;
 
-import com.djawnstj.mvcframework.web.servlet.mvc.Controller;
+import com.djawnstj.mvcframework.web.servlet.HandlerAdapter;
+import com.djawnstj.mvcframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
