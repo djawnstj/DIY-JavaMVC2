@@ -2,25 +2,15 @@ package com.djawnstj.mvcframework.web.servlet.handler;
 
 import com.djawnstj.mvcframework.beans.factory.BeanFactoryUtils;
 import com.djawnstj.mvcframework.context.ApplicationContext;
-import com.djawnstj.mvcframework.context.support.ApplicationObjectSupport;
-import com.djawnstj.mvcframework.web.servlet.HandlerMapping;
 import com.djawnstj.mvcframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-public class BeanNameUrlHandlerMapping extends ApplicationObjectSupport implements HandlerMapping {
+public class BeanNameUrlHandlerMapping extends AbstractHandlerMapping {
 
     private final Map<String, Object> handlerMap = new LinkedHashMap<>();
-
-    private int order = 0;
-
-    public void setOrder(int order) {
-   		this.order = order;
-   	}
 
     @Override
     protected void initApplicationContext(final ApplicationContext context) {
@@ -42,7 +32,7 @@ public class BeanNameUrlHandlerMapping extends ApplicationObjectSupport implemen
     }
 
     @Override
-    public Object getHandler(final HttpServletRequest req) throws Exception {
+    protected Object getHandlerInternal(final HttpServletRequest req) throws Exception {
         final String urlPath = req.getRequestURI();
         return handlerMap.get(urlPath);
     }

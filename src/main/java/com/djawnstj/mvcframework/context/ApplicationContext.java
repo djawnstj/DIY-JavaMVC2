@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -26,6 +27,7 @@ public class ApplicationContext implements BeanFactory {
 
     private final BeanScanner scanner;
     private final Set<Class<?>> beanClasses = new HashSet<>();
+    private List<String> beanDefinitionNames = new ArrayList<>(256);
     private final Map<Class<?>, Class<?>> beanMethodOwnerPair = new LinkedHashMap<>();
     private final Map<String, Object> beansMap = new LinkedHashMap<>();
     private final Map<Class<?>, Set<String>> allBeanNamesByType = new LinkedHashMap<>();
@@ -228,6 +230,7 @@ public class ApplicationContext implements BeanFactory {
 
     private void saveBean(final String beanName, final Object bean) {
         this.beansMap.put(beanName, bean);
+        this.beanDefinitionNames.add(beanName);
         mapToSuperTypes(bean.getClass())
                 .forEach(clazz -> this.allBeanNamesByType.computeIfAbsent(clazz, beanType -> new HashSet<>())
                         .add(beanName));
@@ -313,5 +316,31 @@ public class ApplicationContext implements BeanFactory {
         }
 
         return beanNames.toArray(String[]::new);
+    }
+
+    @Override
+    public String[] getBeanNamesForAnnotation(final Class<? extends Annotation> annotationType) {
+        List<String> result = new ArrayList<>();
+
+        for (String beanName : this.beanDefinitionNames) {
+            final Object bean = getBean(beanName);
+            if (bean != null && findAnnotationOnBean(bean, annotationType) != null) {
+                result.add(beanName);
+            }
+        }
+
+        return result.toArray(new String[0]);
+    }
+
+    @Override
+   	public <A extends Annotation> A findAnnotationOnBean(final Object bean, final Class<A> annotationType) {
+        final Set<Class<?>> classes = mapToSuperTypes(bean.getClass());
+        for (Class<?> clazz : classes) {
+            if (clazz.isAnnotationPresent(annotationType)) {
+                return clazz.getAnnotation(annotationType);
+            }
+        }
+
+        return null;
     }
 }

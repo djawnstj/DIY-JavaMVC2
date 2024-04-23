@@ -3,17 +3,18 @@ package com.djawnstj.mvcframework.web.servlet;
 import com.djawnstj.mvcframework.beans.factory.BeanFactoryUtils;
 import com.djawnstj.mvcframework.context.ApplicationContext;
 import com.djawnstj.mvcframework.web.context.support.WebApplicationContextUtils;
+import com.djawnstj.mvcframework.web.servlet.handler.AbstractHandlerMapping;
 import com.djawnstj.mvcframework.web.servlet.view.JspViewResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +47,8 @@ public class DispatcherServlet extends HttpServlet {
         final Map<String, HandlerMapping> matchingBeans =
                 BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerMapping.class);
         this.handlerMappings = new ArrayList<>(matchingBeans.values());
+
+        this.handlerMappings.sort(Comparator.comparingInt(o -> ((AbstractHandlerMapping) o).getOrder()));
     }
 
     private void initHandlerAdapters(final ApplicationContext context) {

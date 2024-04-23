@@ -1,5 +1,6 @@
 package com.djawnstj.mvcframework.beans.factory;
 
+import java.lang.annotation.Annotation;
 import java.util.Map;
 
 public interface BeanFactory {
@@ -7,4 +8,6 @@ public interface BeanFactory {
     <T> T getBean(final Class<T> requiredType);
     <T> Map<String, T> getBeansOfType(final Class<T> type);
     <T> String[] getBeanNamesForType(final Class<T> type);
+    String[] getBeanNamesForAnnotation(final Class<? extends Annotation> annotationType);
+    <A extends Annotation> A findAnnotationOnBean(final Object bean, final Class<A> annotationType);
 }
