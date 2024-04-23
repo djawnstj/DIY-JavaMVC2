@@ -1,9 +1,8 @@
 package com.djawnstj.mvcframework.web.servlet;
 
-import com.djawnstj.mvcframework.use.SignUpController;
-import com.djawnstj.mvcframework.use.UsersController;
-import com.djawnstj.mvcframework.web.servlet.handler.BeanNameUrlHandlerMapping;
-import com.djawnstj.mvcframework.web.servlet.mvc.SimpleControllerHandlerAdapter;
+import com.djawnstj.mvcframework.beans.factory.BeanFactoryUtils;
+import com.djawnstj.mvcframework.context.ApplicationContext;
+import com.djawnstj.mvcframework.web.context.support.WebApplicationContextUtils;
 import com.djawnstj.mvcframework.web.servlet.view.JspViewResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,25 +13,45 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class DispatcherServlet extends HttpServlet {
 
     private final static Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
-    private final HandlerMapping handlerMapping = new BeanNameUrlHandlerMapping(
-            Map.of(
-                    "/sign-up", new SignUpController(),
-                    "/users", new UsersController()
-            )
-    );
+    private List<HandlerMapping> handlerMappings;
 
-    private final HandlerAdapter handlerAdapter = new SimpleControllerHandlerAdapter();
+    private List<HandlerAdapter> handlerAdapters;
 
     @Override
-    public void init(final ServletConfig config) throws ServletException {
+    public void init() throws ServletException {
         log.info("DispatcherServlet init called.");
-        super.init(config);
+
+        initStrategies(initWebApplicationContext());
+        super.init();
+    }
+
+    private ApplicationContext initWebApplicationContext() {
+        return WebApplicationContextUtils.getWebApplicationContext(getServletContext(), ApplicationContext.APPLICATION_CONTEXT_ATTRIBUTE);
+    }
+
+    private void initStrategies(final ApplicationContext context) {
+        initHandlerMappings(context);
+        initHandlerAdapters(context);
+    }
+
+    private void initHandlerMappings(final ApplicationContext context) {
+        final Map<String, HandlerMapping> matchingBeans =
+                BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerMapping.class);
+        this.handlerMappings = new ArrayList<>(matchingBeans.values());
+    }
+
+    private void initHandlerAdapters(final ApplicationContext context) {
+        final Map<String, HandlerAdapter> matchingBeans =
+                BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerAdapter.class);
+        this.handlerAdapters = new ArrayList<>(matchingBeans.values());
     }
 
     @Override
@@ -44,18 +63,42 @@ public class DispatcherServlet extends HttpServlet {
 
     private void doDispatch(final HttpServletRequest req, final HttpServletResponse resp) {
         try {
-            final Object handler = handlerMapping.getHandler(req);
+            final Object handler = getHandler(req);
 
-            final boolean supports = handlerAdapter.supports(handler);
+            final HandlerAdapter ha = getHandlerAdapter(handler);
 
-            if (supports) {
-                final ModelAndView mv = handlerAdapter.handle(req, resp, handler);
-                render(mv, req, resp);
-            }
+            final ModelAndView mv = ha.handle(req, resp, handler);
+
+            render(mv, req, resp);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
+    protected Object getHandler(final HttpServletRequest req) throws Exception {
+   		if (this.handlerMappings != null) {
+   			for (final HandlerMapping mapping : this.handlerMappings) {
+   				final Object handler = mapping.getHandler(req);
+   				if (handler != null) {
+   					return handler;
+   				}
+   			}
+   		}
+   		return null;
+   	}
+
+    protected HandlerAdapter getHandlerAdapter(final Object handler) throws ServletException {
+   		if (this.handlerAdapters != null) {
+   			for (final HandlerAdapter adapter : this.handlerAdapters) {
+   				if (adapter.supports(handler)) {
+   					return adapter;
+   				}
+   			}
+   		}
+
+   		throw new ServletException("No adapter for handler [" + handler +
+   				"]: The DispatcherServlet configuration needs to include a HandlerAdapter that supports this handler");
+   	}
 
     private void render(final ModelAndView mv, final HttpServletRequest req, final HttpServletResponse resp) throws Exception {
         final String viewName = mv.getViewName();

@@ -2,6 +2,7 @@ package com.djawnstj.mvcframework.boot.web.embbed.tomcat;
 
 import com.djawnstj.mvcframework.boot.web.server.WebServer;
 import com.djawnstj.mvcframework.boot.web.server.WebServerException;
+import com.djawnstj.mvcframework.boot.web.servlet.ServletContextInitializer;
 import com.djawnstj.mvcframework.web.servlet.DispatcherServlet;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
@@ -22,11 +23,16 @@ import java.util.logging.Level;
 public class TomcatWebServer implements WebServer {
     private static final Logger log = LoggerFactory.getLogger(TomcatWebServer.class);
 
+    private final ServletContextInitializer[] initializers;
     private final Servlet dispatcherServlet = new DispatcherServlet();
     private final Tomcat tomcat = new Tomcat();
     private int port = 8080;
     private final Object monitor = new Object();
     private boolean started = false;
+
+    public TomcatWebServer(final ServletContextInitializer... initializers) {
+        this.initializers = initializers;
+    }
 
     @Override
     public void start() throws WebServerException {
@@ -68,8 +74,17 @@ public class TomcatWebServer implements WebServer {
         final String resourcesPath = Paths.get("src", "main", "resources").toString();
         final String absoluteResourcesPath = new File(resourcesPath).getAbsolutePath();
         log.info("resource path = {}", absoluteResourcesPath);
+
         final Context context = this.tomcat.addWebapp("/", absoluteResourcesPath);
 
+        context.addServletContainerInitializer(new TomcatStarter(this.initializers), null);
+
+        setServerResources(context);
+
+        setDispatcherServlet(context);
+    }
+
+    private void setServerResources(final Context context) {
         final String classPath = getClassPath();
         log.info("current class path = {}", classPath);
 
@@ -77,8 +92,6 @@ public class TomcatWebServer implements WebServer {
         resources.addPostResources(new DirResourceSet(resources, "/WEB-INF/classes", classPath, "/"));
 
         context.setResources(resources);
-
-        setDispatcherServlet(context);
     }
 
     private void setDispatcherServlet(final Context context) {

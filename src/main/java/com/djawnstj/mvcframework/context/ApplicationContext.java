@@ -2,13 +2,18 @@ package com.djawnstj.mvcframework.context;
 
 import com.djawnstj.mvcframework.beans.BeanScanner;
 import com.djawnstj.mvcframework.beans.factory.BeanFactory;
+import com.djawnstj.mvcframework.boot.web.embbed.tomcat.TomcatWebServer;
+import com.djawnstj.mvcframework.boot.web.server.WebServer;
+import com.djawnstj.mvcframework.boot.web.servlet.ServletContextInitializer;
 import com.djawnstj.mvcframework.context.annotation.Bean;
 import com.djawnstj.mvcframework.context.annotation.Configuration;
 import com.djawnstj.mvcframework.context.annotation.factory.Autowired;
 import com.djawnstj.mvcframework.context.annotation.stereotype.Component;
+import com.djawnstj.mvcframework.context.support.ApplicationObjectSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletContext;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -16,8 +21,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 public class ApplicationContext implements BeanFactory {
-
     private static final Logger log = LoggerFactory.getLogger(ApplicationContext.class);
+    public static String APPLICATION_CONTEXT_ATTRIBUTE = ApplicationContext.class.getName();
 
     private final BeanScanner scanner;
     private final Set<Class<?>> beanClasses = new HashSet<>();
@@ -27,6 +32,10 @@ public class ApplicationContext implements BeanFactory {
 
     public ApplicationContext(final String componentScanPackage) {
         this.scanner = new BeanScanner(componentScanPackage);
+
+        initialize();
+
+        createWebServer();
     }
 
     public void initialize() {
@@ -37,7 +46,36 @@ public class ApplicationContext implements BeanFactory {
         log.debug("added bean method return type in configuration = {}", beanMethodOwnerPair.keySet());
 
         createBeansByClass(beanClasses);
-        log.debug("bean create done. created bean instances = {}", beansMap);
+        if (log.isDebugEnabled()) {
+            log.debug("bean create done. created bean instances = {}", beansMap);
+
+            allBeanNamesByType.forEach((type, beanNames) -> log.debug("bean names mapped by '" + type.getName() + "' type: {}", beanNames));
+        }
+
+        initApplicationObjectSupport();
+        log.info("Initializing Spring ApplicationContext");
+    }
+
+    private void initApplicationObjectSupport() {
+        final Map<String, ApplicationObjectSupport> supports = getBeansOfType(ApplicationObjectSupport.class);
+        supports.values().forEach(support -> support.setApplicationContext(this));
+    }
+
+    private void createWebServer() {
+        final WebServer webServer = new TomcatWebServer(getSelfInitializer());
+        webServer.start();
+    }
+
+    private ServletContextInitializer getSelfInitializer() {
+   		return this::selfInitialize;
+   	}
+
+    private void selfInitialize(final ServletContext servletContext) {
+		prepareWebApplicationContext(servletContext);
+	}
+
+    private void prepareWebApplicationContext(final ServletContext servletContext) {
+        servletContext.setAttribute(ApplicationContext.APPLICATION_CONTEXT_ATTRIBUTE, this);
     }
 
     private void extractBeanMethodInConfiguration(final Set<Class<?>> preInstantiatedClasses) {
@@ -50,7 +88,7 @@ public class ApplicationContext implements BeanFactory {
     }
 
     private void createBeansByClass(final Set<Class<?>> preInstantiatedClasses) {
-        for (Class<?> clazz : preInstantiatedClasses) {
+        for (final Class<?> clazz : preInstantiatedClasses) {
             if (isBeanInitialized(clazz.getName())) continue;
 
             createBeanInstance(clazz);
@@ -190,21 +228,24 @@ public class ApplicationContext implements BeanFactory {
 
     private void saveBean(final String beanName, final Object bean) {
         this.beansMap.put(beanName, bean);
-        mapToSuperClasses(bean.getClass())
+        mapToSuperTypes(bean.getClass())
                 .forEach(clazz -> this.allBeanNamesByType.computeIfAbsent(clazz, beanType -> new HashSet<>())
                         .add(beanName));
     }
 
-    private Set<Class<?>> mapToSuperClasses(final Class<?> clazz) {
-        final HashSet<Class<?>> superClasses = new HashSet<>();
+    private Set<Class<?>> mapToSuperTypes(final Class<?> clazz) {
+        final HashSet<Class<?>> superTypes = new HashSet<>();
         Class<?> superClass = clazz;
 
         while (superClass != null) {
-            superClasses.add(superClass);
+            final Class<?>[] interfaces = superClass.getInterfaces();
+            superTypes.add(superClass);
+            superTypes.addAll(List.of(interfaces));
+
             superClass = superClass.getSuperclass();
         }
 
-        return superClasses;
+        return superTypes;
     }
 
     private void createBeanInConfigurationAnnotatedClass(final Object configuration) {
@@ -250,5 +291,27 @@ public class ApplicationContext implements BeanFactory {
         final String beanName = beanNames.stream().findFirst().get();
 
         return (T) this.beansMap.get(beanName);
+    }
+
+    @Override
+    public <T> Map<String, T> getBeansOfType(final Class<T> type) {
+        final String[] beanNames = getBeanNamesForType(type);
+        final LinkedHashMap<String, T> result = new LinkedHashMap<>(beanNames.length);
+
+        Arrays.stream(beanNames)
+                .forEach(beanName -> result.put(beanName, (T) getBean(beanName)));
+
+        return result;
+    }
+
+    @Override
+    public <T> String[] getBeanNamesForType(final Class<T> type) {
+        final Set<String> beanNames = this.allBeanNamesByType.get(type);
+
+        if (beanNames == null) {
+            throw new RuntimeException("Bean names not found '" + type.getName() + "'");
+        }
+
+        return beanNames.toArray(String[]::new);
     }
 }
