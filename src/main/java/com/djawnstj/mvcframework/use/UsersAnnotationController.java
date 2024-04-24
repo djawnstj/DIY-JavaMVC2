@@ -11,4 +11,9 @@ public class UsersAnnotationController {
     public String annotationUsers() {
         return "users";
     }
+
+    @RequestMapping("/home")
+    public String annotationHome() {
+        return "home";
+    }
 }

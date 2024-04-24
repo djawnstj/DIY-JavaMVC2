@@ -4,6 +4,7 @@ import com.djawnstj.mvcframework.beans.factory.BeanFactoryUtils;
 import com.djawnstj.mvcframework.context.ApplicationContext;
 import com.djawnstj.mvcframework.web.context.support.WebApplicationContextUtils;
 import com.djawnstj.mvcframework.web.servlet.handler.AbstractHandlerMapping;
+import com.djawnstj.mvcframework.web.servlet.view.HtmlViewResolver;
 import com.djawnstj.mvcframework.web.servlet.view.JspViewResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,7 +113,7 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private View resolveViewName(final String viewName) {
-        final ViewResolver viewResolver = new JspViewResolver();
+        final ViewResolver viewResolver = new HtmlViewResolver();
 
         final View view = viewResolver.resolveViewName(viewName);
 
