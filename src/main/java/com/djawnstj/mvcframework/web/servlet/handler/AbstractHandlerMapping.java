@@ -1,18 +1,19 @@
 package com.djawnstj.mvcframework.web.servlet.handler;
 
 import com.djawnstj.mvcframework.context.support.ApplicationObjectSupport;
+import com.djawnstj.mvcframework.core.Ordered;
 import com.djawnstj.mvcframework.web.servlet.HandlerMapping;
 
 import javax.servlet.http.HttpServletRequest;
 
-public abstract class AbstractHandlerMapping extends ApplicationObjectSupport implements HandlerMapping {
-
+public abstract class AbstractHandlerMapping extends ApplicationObjectSupport implements HandlerMapping, Ordered {
     private int order = 0;
 
     public void setOrder(int order) {
-   		this.order = order;
-   	}
+        this.order = order;
+    }
 
+    @Override
     public int getOrder() {
         return this.order;
     }

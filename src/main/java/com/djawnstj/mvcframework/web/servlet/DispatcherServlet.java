@@ -2,10 +2,8 @@ package com.djawnstj.mvcframework.web.servlet;
 
 import com.djawnstj.mvcframework.beans.factory.BeanFactoryUtils;
 import com.djawnstj.mvcframework.context.ApplicationContext;
+import com.djawnstj.mvcframework.core.Ordered;
 import com.djawnstj.mvcframework.web.context.support.WebApplicationContextUtils;
-import com.djawnstj.mvcframework.web.servlet.handler.AbstractHandlerMapping;
-import com.djawnstj.mvcframework.web.servlet.view.HtmlViewResolver;
-import com.djawnstj.mvcframework.web.servlet.view.JspViewResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +22,8 @@ public class DispatcherServlet extends HttpServlet {
     private final static Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
     private List<HandlerMapping> handlerMappings;
-
     private List<HandlerAdapter> handlerAdapters;
+    private List<ViewResolver> viewResolvers;
 
     @Override
     public void init() throws ServletException {
@@ -42,6 +40,7 @@ public class DispatcherServlet extends HttpServlet {
     private void initStrategies(final ApplicationContext context) {
         initHandlerMappings(context);
         initHandlerAdapters(context);
+        initViewResolvers(context);
     }
 
     private void initHandlerMappings(final ApplicationContext context) {
@@ -49,13 +48,21 @@ public class DispatcherServlet extends HttpServlet {
                 BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerMapping.class);
         this.handlerMappings = new ArrayList<>(matchingBeans.values());
 
-        this.handlerMappings.sort(Comparator.comparingInt(o -> ((AbstractHandlerMapping) o).getOrder()));
+        this.handlerMappings.sort(Comparator.comparingInt(o -> ((Ordered) o).getOrder()));
     }
 
     private void initHandlerAdapters(final ApplicationContext context) {
         final Map<String, HandlerAdapter> matchingBeans =
                 BeanFactoryUtils.beansOfTypeIncludingAncestors(context, HandlerAdapter.class);
         this.handlerAdapters = new ArrayList<>(matchingBeans.values());
+    }
+
+    private void initViewResolvers(final ApplicationContext context) {
+        final Map<String, ViewResolver> matchingBeans =
+                BeanFactoryUtils.beansOfTypeIncludingAncestors(context, ViewResolver.class);
+        this.viewResolvers = new ArrayList<>(matchingBeans.values());
+
+        this.viewResolvers.sort(Comparator.comparingInt(o -> ((Ordered) o).getOrder()));
     }
 
     @Override
@@ -113,11 +120,16 @@ public class DispatcherServlet extends HttpServlet {
     }
 
     private View resolveViewName(final String viewName) {
-        final ViewResolver viewResolver = new HtmlViewResolver();
+        if (this.viewResolvers != null) {
+            for (ViewResolver viewResolver : this.viewResolvers) {
+                View view = viewResolver.resolveViewName(viewName);
+                if (view != null) {
+                    return view;
+                }
+            }
+        }
 
-        final View view = viewResolver.resolveViewName(viewName);
-
-        return view;
+        return null;
     }
 
 }

@@ -2,6 +2,8 @@ package com.djawnstj.mvcframework.context;
 
 import com.djawnstj.mvcframework.beans.BeanScanner;
 import com.djawnstj.mvcframework.beans.factory.BeanFactory;
+import com.djawnstj.mvcframework.boot.ApplicationArguments;
+import com.djawnstj.mvcframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.djawnstj.mvcframework.boot.web.embbed.tomcat.TomcatWebServer;
 import com.djawnstj.mvcframework.boot.web.server.WebServer;
 import com.djawnstj.mvcframework.boot.web.servlet.ServletContextInitializer;
@@ -26,14 +28,16 @@ public class ApplicationContext implements BeanFactory {
     public static String APPLICATION_CONTEXT_ATTRIBUTE = ApplicationContext.class.getName();
 
     private final BeanScanner scanner;
+    private final ApplicationArguments applicationArgs;
     private final Set<Class<?>> beanClasses = new HashSet<>();
     private List<String> beanDefinitionNames = new ArrayList<>(256);
     private final Map<Class<?>, Class<?>> beanMethodOwnerPair = new LinkedHashMap<>();
     private final Map<String, Object> beansMap = new LinkedHashMap<>();
     private final Map<Class<?>, Set<String>> allBeanNamesByType = new LinkedHashMap<>();
 
-    public ApplicationContext(final String componentScanPackage) {
-        this.scanner = new BeanScanner(componentScanPackage);
+    public ApplicationContext(final String componentScanPackage, final ApplicationArguments applicationArgs) {
+        this.scanner = new BeanScanner(componentScanPackage, applicationArgs);
+        this.applicationArgs = applicationArgs;
 
         initialize();
 
@@ -217,7 +221,9 @@ public class ApplicationContext implements BeanFactory {
             try {
                 field.setAccessible(true);
 
-                if (!isBeanInitialized(field.getType().getSimpleName())) createBeanInstance(field.getType());
+                if (!isBeanInitialized(field.getType().getSimpleName())) {
+                    createBeanInstance(field.getType());
+                }
 
                 field.set(instance, getBean(field.getType()));
             } catch (IllegalAccessException e) {

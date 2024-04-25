@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ApplicationContextTest {
 
-    private final ApplicationContext applicationContext = new ApplicationContext("com.djawnstj.mvcframework");
+    private final ApplicationContext applicationContext = new ApplicationContext("com.djawnstj.mvcframework", applicationArgs);
 
     @DisplayName("애너테이션 기반 컴포넌트 스캔을 진행한다")
     @Test

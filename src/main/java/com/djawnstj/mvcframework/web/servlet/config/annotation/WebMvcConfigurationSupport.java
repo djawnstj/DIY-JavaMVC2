@@ -6,6 +6,7 @@ import com.djawnstj.mvcframework.web.servlet.handler.BeanNameUrlHandlerMapping;
 import com.djawnstj.mvcframework.web.servlet.mvc.SimpleControllerHandlerAdapter;
 import com.djawnstj.mvcframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import com.djawnstj.mvcframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import com.djawnstj.mvcframework.web.servlet.view.JspViewResolver;
 
 @Configuration
 public class WebMvcConfigurationSupport {
@@ -34,5 +35,10 @@ public class WebMvcConfigurationSupport {
     @Bean
     public RequestMappingHandlerAdapter requestMappingHandlerAdapter() {
         return new RequestMappingHandlerAdapter();
+    }
+
+    @Bean
+    public JspViewResolver jspViewResolver() {
+        return new JspViewResolver();
     }
 }
